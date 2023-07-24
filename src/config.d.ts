@@ -1,13 +1,12 @@
-import { Database } from './db'
-import { DidResolver } from '@atproto/did-resolver'
+// @ts-check
 
-export type AppContext = {
+type AppContext = {
   db: Database
-  didResolver: DidResolver
+  didResolver: import('@atproto/did-resolver').DidResolver
   cfg: Config
 }
 
-export type Config = {
+type Config = {
   port: number
   listenhost: string
   hostname: string
@@ -17,3 +16,5 @@ export type Config = {
   publisherDid: string
   subscriptionReconnectDelay: number
 }
+
+type Database = Kysely<DatabaseSchema>

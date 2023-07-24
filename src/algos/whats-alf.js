@@ -1,11 +1,17 @@
-import { InvalidRequestError } from '@atproto/xrpc-server'
-import { QueryParams } from '../lexicon/types/app/bsky/feed/getFeedSkeleton'
-import { AppContext } from '../config'
+// @ts-check
+
+const { InvalidRequestError } = require('@atproto/xrpc-server');
 
 // max 15 chars
-export const shortname = 'whats-alf'
+const shortname = 'whats-alf'
 
-export const handler = async (ctx: AppContext, params: QueryParams) => {
+/**
+ * 
+ * @param {AppContext} ctx
+ * @param {import('../../lexicon-js/types/app/bsky/feed/getFeedSkeleton')} params 
+ * @returns 
+ */
+const handler = async (ctx, params) => {
   let builder = ctx.db
     .selectFrom('post')
     .selectAll()
@@ -30,7 +36,8 @@ export const handler = async (ctx: AppContext, params: QueryParams) => {
     post: row.uri,
   }))
 
-  let cursor: string | undefined
+  /** @type {string | undefined} */
+  let cursor
   const last = res.at(-1)
   if (last) {
     cursor = `${new Date(last.indexedAt).getTime()}::${last.cid}`
@@ -41,3 +48,8 @@ export const handler = async (ctx: AppContext, params: QueryParams) => {
     feed,
   }
 }
+
+module.exports = {
+  shortname,
+  handler
+};

@@ -1,5 +1,7 @@
-import dotenv from 'dotenv'
-import FeedGenerator from './server'
+// @ts-check
+
+const dotenv = require('dotenv')
+const FeedGenerator = require('./server');
 
 const run = async () => {
   dotenv.config()
@@ -26,12 +28,14 @@ const run = async () => {
   )
 }
 
-const maybeStr = (val?: string) => {
+/** @param {string=} val */
+const maybeStr = (val) => {
   if (!val) return undefined
   return val
 }
 
-const maybeInt = (val?: string) => {
+/** @param {string=} val */
+const maybeInt = (val) => {
   if (!val) return undefined
   const int = parseInt(val, 10)
   if (isNaN(int)) return undefined

@@ -1,35 +1,31 @@
-import http from 'http'
-import events from 'events'
-import express from 'express'
-import { DidResolver, MemoryCache } from '@atproto/did-resolver'
-import { createServer } from './lexicon'
-import feedGeneration from './methods/feed-generation'
-import describeGenerator from './methods/describe-generator'
-import { createDb, Database, migrateToLatest } from './db'
-import { FirehoseSubscription } from './subscription'
-import { AppContext, Config } from './config'
-import wellKnown from './well-known'
+// @ts-check
 
-export class FeedGenerator {
-  public app: express.Application
-  public server?: http.Server
-  public db: Database
-  public firehose: FirehoseSubscription
-  public cfg: Config
+const events = require('events');
+const express = require('express');
+const { DidResolver, MemoryCache } = require('@atproto/did-resolver');
+const { createServer } = require('../lexicon-js');
+const feedGeneration = require('./methods/feed-generation');
+const describeGenerator = require('./methods/describe-generator');
+const { createDb, migrateToLatest } = require('./db');
+const FirehoseSubscription = require('./subscription');
+const wellKnown = require('./well-known');
 
-  constructor(
-    app: express.Application,
-    db: Database,
-    firehose: FirehoseSubscription,
-    cfg: Config,
-  ) {
+class FeedGenerator {
+  /**
+   * @param {express.Application} app
+   * @param {Database} db
+   * @param {FirehoseSubscription} firehose
+   * @param {Config} cfg
+   */
+  constructor(app, db, firehose, cfg) {
     this.app = app
     this.db = db
     this.firehose = firehose
     this.cfg = cfg
   }
 
-  static create(cfg: Config) {
+  /** @param {Config} cfg */
+  static create(cfg) {
     const app = express()
     const db = createDb(cfg.sqliteLocation)
     const firehose = new FirehoseSubscription(db, cfg.subscriptionEndpoint)
@@ -48,7 +44,9 @@ export class FeedGenerator {
         blobLimit: 5 * 1024 * 1024, // 5mb
       },
     })
-    const ctx: AppContext = {
+
+    /** @type {AppContext} */
+    const ctx = {
       db,
       didResolver,
       cfg,
@@ -61,7 +59,7 @@ export class FeedGenerator {
     return new FeedGenerator(app, db, firehose, cfg)
   }
 
-  async start(): Promise<http.Server> {
+  async start() {
     await migrateToLatest(this.db)
     this.firehose.run(this.cfg.subscriptionReconnectDelay)
     this.server = this.app.listen(this.cfg.port, this.cfg.listenhost)
@@ -70,4 +68,4 @@ export class FeedGenerator {
   }
 }
 
-export default FeedGenerator
+module.exports = FeedGenerator

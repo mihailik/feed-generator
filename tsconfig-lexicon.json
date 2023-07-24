@@ -4,7 +4,8 @@
     "lib": [
       "ESNext",
     ],
-    "outDir": "dist",
+    "outDir": "lexicon-js",
+    "declaration": true,
     "module": "CommonJS",
     "target": "ES6",
     "esModuleInterop": true,
@@ -14,7 +15,7 @@
     "strictNullChecks": true,
     "skipLibCheck": true
   },
-  "include": ["./src/**/*.ts", "src/index.js", "src/server.js", "src/methods/describe-generator.js", "src/algos/index.js", "src/methods/feed-generation.js", "src/well-known.js", "src/algos/whats-alf.js", "src/db/index.js", "src/db/migrations.js", "src/util/subscription.js", "src/subscription.js"],
+  "include": ["./src/lexicon/**/*.ts"],
   "exclude": [
     "node_modules"
   ]

@@ -1,11 +1,15 @@
-import {
-  OutputSchema as RepoEvent,
-  isCommit,
-} from './lexicon/types/com/atproto/sync/subscribeRepos'
-import { FirehoseSubscriptionBase, getOpsByType } from './util/subscription'
+// @ts-check
 
-export class FirehoseSubscription extends FirehoseSubscriptionBase {
-  async handleEvent(evt: RepoEvent) {
+/** @typedef {import('../lexicon-js/types/com/atproto/sync/subscribeRepos').OutputSchema} RepoEvent */
+
+const { isCommit } = require('../lexicon-js/types/com/atproto/sync/subscribeRepos');
+const { FirehoseSubscriptionBase, getOpsByType } = require('./util/subscription');
+
+class FirehoseSubscription extends FirehoseSubscriptionBase {
+  /**
+   * @param {RepoEvent} evt
+   */
+  async handleEvent(evt) {
     if (!isCommit(evt)) return
     const ops = await getOpsByType(evt)
 
@@ -48,3 +52,5 @@ export class FirehoseSubscription extends FirehoseSubscriptionBase {
     }
   }
 }
+
+module.exports = FirehoseSubscription;

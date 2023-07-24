@@ -7,9 +7,9 @@
   "author": "dholms <dtholmgren@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "publishFeed": "ts-node scripts/publishFeedGen.ts",
-    "start": "ts-node src/index.ts",
-    "build": "tsc"
+    "publishFeed": "node scripts/publishFeedGen.js",
+    "start": "node src/index.js",
+    "build": "tsc --build tsconfig-lexicon.json"
   },
   "dependencies": {
     "@atproto/api": "^0.3.7",

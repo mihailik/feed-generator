@@ -1,29 +1,35 @@
-import { Subscription } from '@atproto/xrpc-server'
-import { cborToLexRecord, readCar } from '@atproto/repo'
-import { BlobRef } from '@atproto/lexicon'
-import { ids, lexicons } from '../lexicon/lexicons'
-import { Record as PostRecord } from '../lexicon/types/app/bsky/feed/post'
-import { Record as RepostRecord } from '../lexicon/types/app/bsky/feed/repost'
-import { Record as LikeRecord } from '../lexicon/types/app/bsky/feed/like'
-import { Record as FollowRecord } from '../lexicon/types/app/bsky/graph/follow'
-import {
-  Commit,
-  OutputSchema as RepoEvent,
-  isCommit,
-} from '../lexicon/types/com/atproto/sync/subscribeRepos'
-import { Database } from '../db'
+// @ts-check
 
-export abstract class FirehoseSubscriptionBase {
-  public sub: Subscription<RepoEvent>
+const { Subscription } = require('@atproto/xrpc-server')
+const { cborToLexRecord, readCar } = require('@atproto/repo')
+const { BlobRef } = require('@atproto/lexicon')
+const { ids, lexicons } = require('../../lexicon-js/lexicons')
 
-  constructor(public db: Database, public service: string) {
+/** @typedef {import('../../lexicon-js/types/app/bsky/feed/post').Record} PostRecord */
+/** @typedef {import('../../lexicon-js/types/app/bsky/feed/repost').Record} RepostRecord */
+/** @typedef {import('../../lexicon-js/types/app/bsky/feed/like').Record} LikeRecord */
+/** @typedef {import('../../lexicon-js/types/app/bsky/graph/follow').Record} FollowRecord */
+/** @typedef {import('../../lexicon-js/types/com/atproto/sync/subscribeRepos').Commit} Commit */
+/** @typedef {import('../../lexicon-js/types/com/atproto/sync/subscribeRepos').OutputSchema} RepoEvent */
+
+const { isCommit } = require('../../lexicon-js/types/com/atproto/sync/subscribeRepos');
+
+class FirehoseSubscriptionBase {
+
+  /**
+   * @param {Database} db
+   * @param {string} service
+   */
+  constructor(db, service) {
+    this.db = db;
+    this.service = service;
     this.sub = new Subscription({
       service: service,
       method: ids.ComAtprotoSyncSubscribeRepos,
       getParams: () => this.getCursor(),
-      validate: (value: unknown) => {
+      validate: (value) => {
         try {
-          return lexicons.assertValidXrpcMessage<RepoEvent>(
+          return lexicons.assertValidXrpcMessage(
             ids.ComAtprotoSyncSubscribeRepos,
             value,
           )
@@ -34,9 +40,16 @@ export abstract class FirehoseSubscriptionBase {
     })
   }
 
-  abstract handleEvent(evt: RepoEvent): Promise<void>
+  /**
+   * @abstract
+   * @param {RepoEvent} evt
+   */
+  handleEvent(evt) { throw new Error('Not implemented.'); }
 
-  async run(subscriptionReconnectDelay: number) {
+  /**
+   * @param {number} subscriptionReconnectDelay
+   */
+  async run(subscriptionReconnectDelay) {
     try {
       for await (const evt of this.sub) {
         try {
@@ -55,7 +68,10 @@ export abstract class FirehoseSubscriptionBase {
     }
   }
 
-  async updateCursor(cursor: number) {
+  /**
+   * @param {number} cursor
+   */
+  async updateCursor(cursor) {
     await this.db
       .updateTable('sub_state')
       .set({ cursor })
@@ -63,7 +79,7 @@ export abstract class FirehoseSubscriptionBase {
       .execute()
   }
 
-  async getCursor(): Promise<{ cursor?: number }> {
+  async getCursor() {
     const res = await this.db
       .selectFrom('sub_state')
       .selectAll()
@@ -73,9 +89,13 @@ export abstract class FirehoseSubscriptionBase {
   }
 }
 
-export const getOpsByType = async (evt: Commit): Promise<OperationsByType> => {
+/**
+ * @param {Commit} evt
+ */
+const getOpsByType = async (evt) => {
   const car = await readCar(evt.blocks)
-  const opsByType: OperationsByType = {
+  /** @type {OperationsByType} */
+  const opsByType = {
     posts: { creates: [], deletes: [] },
     reposts: { creates: [], deletes: [] },
     likes: { creates: [], deletes: [] },
@@ -121,46 +141,27 @@ export const getOpsByType = async (evt: Commit): Promise<OperationsByType> => {
   return opsByType
 }
 
-type OperationsByType = {
-  posts: Operations<PostRecord>
-  reposts: Operations<RepostRecord>
-  likes: Operations<LikeRecord>
-  follows: Operations<FollowRecord>
-}
-
-type Operations<T = Record<string, unknown>> = {
-  creates: CreateOp<T>[]
-  deletes: DeleteOp[]
-}
-
-type CreateOp<T> = {
-  uri: string
-  cid: string
-  author: string
-  record: T
-}
-
-type DeleteOp = {
-  uri: string
-}
-
-export const isPost = (obj: unknown): obj is PostRecord => {
+/** @type {(obj: unknown) => obj is PostRecord} */
+const isPost = (obj) => {
   return isType(obj, ids.AppBskyFeedPost)
 }
 
-export const isRepost = (obj: unknown): obj is RepostRecord => {
+/** @type {(obj: unknown): obj is RepostRecord} */
+const isRepost = (obj) => {
   return isType(obj, ids.AppBskyFeedRepost)
 }
 
-export const isLike = (obj: unknown): obj is LikeRecord => {
+/** @type {(obj: unknown): obj is LikeRecord} */
+const isLike = (obj) => {
   return isType(obj, ids.AppBskyFeedLike)
 }
 
-export const isFollow = (obj: unknown): obj is FollowRecord => {
+/** @type {(obj: unknown): obj is FollowRecord} */
+const isFollow = (obj) => {
   return isType(obj, ids.AppBskyGraphFollow)
 }
 
-const isType = (obj: unknown, nsid: string) => {
+const isType = (obj, nsid) => {
   try {
     lexicons.assertValidRecord(nsid, fixBlobRefs(obj))
     return true
@@ -173,18 +174,27 @@ const isType = (obj: unknown, nsid: string) => {
 // simply because multiple packages have their own copy
 // of the BlobRef class, causing instanceof checks to fail.
 // This is a temporary solution.
-const fixBlobRefs = (obj: unknown): unknown => {
+const fixBlobRefs = (obj) => {
   if (Array.isArray(obj)) {
     return obj.map(fixBlobRefs)
   }
   if (obj && typeof obj === 'object') {
     if (obj.constructor.name === 'BlobRef') {
-      const blob = obj as BlobRef
+      const blob = /** @type {BlobRef} */(obj)
       return new BlobRef(blob.ref, blob.mimeType, blob.size, blob.original)
     }
     return Object.entries(obj).reduce((acc, [key, val]) => {
       return Object.assign(acc, { [key]: fixBlobRefs(val) })
-    }, {} as Record<string, unknown>)
+    }, {})
   }
   return obj
+}
+
+module.exports = {
+  FirehoseSubscriptionBase,
+  getOpsByType,
+  isPost,
+  isRepost,
+  isLike,
+  isFollow
 }

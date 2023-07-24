@@ -1,35 +1,40 @@
-import dotenv from 'dotenv'
-import { AtpAgent, BlobRef } from '@atproto/api'
-import fs from 'fs/promises'
-import { ids } from '../src/lexicon/lexicons'
+// @ts-check
+
+const dotenv = require('dotenv');
+const { AtpAgent, BlobRef } = require('@atproto/api');
+const fs = require('fs/promises');
+const { ids } = require('../lexicon-js/lexicons');
 
 const run = async () => {
   dotenv.config()
 
+  const _auth = (await fs.readFile(__dirname + '/../node_modules/.auth', 'utf8')).trim().split(/[\r\n+]/g);
+
   // YOUR bluesky handle
   // Ex: user.bsky.social
-  const handle = ''
+  const handle = _auth[0];
 
   // YOUR bluesky password, or preferably an App Password (found in your client settings)
   // Ex: abcd-1234-efgh-5678
-  const password = ''
+  const password = _auth[1];
 
   // A short name for the record that will show in urls
   // Lowercase with no spaces.
   // Ex: whats-hot
-  const recordName = ''
+  const recordName = 'tak'
 
   // A display name for your feed
   // Ex: What's Hot
-  const displayName = ''
+  const displayName = 'TAK! 🧲'
 
   // (Optional) A description of your feed
   // Ex: Top trending content from the whole network
-  const description = ''
+  const description = 'Ю'
 
   // (Optional) The path to an image to be used as your feed's avatar
   // Ex: ~/path/to/avatar.jpeg
-  const avatar: string = ''
+  /** @type {string} */
+  const avatar = ''
 
   // -------------------------------------
   // NO NEED TO TOUCH ANYTHING BELOW HERE
@@ -53,9 +58,11 @@ const run = async () => {
     )
   }
 
-  let avatarRef: BlobRef | undefined
+  /** @type {BlobRef | undefined} */
+  let avatarRef
   if (avatar) {
-    let encoding: string
+    /** @type {string} */
+    let encoding
     if (avatar.endsWith('png')) {
       encoding = 'image/png'
     } else if (avatar.endsWith('jpg') || avatar.endsWith('jpeg')) {

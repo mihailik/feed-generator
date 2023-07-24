@@ -1,7 +1,11 @@
-import express from 'express'
-import { AppContext } from './config'
+// @ts-check
 
-const makeRouter = (ctx: AppContext) => {
+const express = require('express');
+
+/**
+ * @param {AppContext} ctx
+ */
+const makeRouter = (ctx) => {
   const router = express.Router()
 
   router.get('/.well-known/did.json', (_req, res) => {
@@ -23,4 +27,4 @@ const makeRouter = (ctx: AppContext) => {
 
   return router
 }
-export default makeRouter
+module.exports = makeRouter

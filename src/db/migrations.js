@@ -1,15 +1,17 @@
-import { Kysely, Migration, MigrationProvider } from 'kysely'
+// @ts-check
 
-const migrations: Record<string, Migration> = {}
+/** @type {Record<string, import('kysely').Migration>} */
+const migrations = {}
 
-export const migrationProvider: MigrationProvider = {
+/** @type {import('kysely').MigrationProvider} */
+const migrationProvider = {
   async getMigrations() {
     return migrations
   },
 }
 
 migrations['001'] = {
-  async up(db: Kysely<unknown>) {
+  async up(/** @type {import('kysely').Kysely<unknown>} */db) {
     await db.schema
       .createTable('post')
       .addColumn('uri', 'varchar', (col) => col.primaryKey())
@@ -24,8 +26,10 @@ migrations['001'] = {
       .addColumn('cursor', 'integer', (col) => col.notNull())
       .execute()
   },
-  async down(db: Kysely<unknown>) {
+  async down(/** @type {import('kysely').Kysely<unknown>} */db) {
     await db.schema.dropTable('post').execute()
     await db.schema.dropTable('sub_state').execute()
   },
 }
+
+module.exports = migrationProvider;

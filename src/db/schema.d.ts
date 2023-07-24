@@ -1,9 +1,9 @@
-export type DatabaseSchema = {
+type DatabaseSchema = {
   post: Post
   sub_state: SubState
 }
 
-export type Post = {
+type Post = {
   uri: string
   cid: string
   replyParent: string | null
@@ -11,7 +11,7 @@ export type Post = {
   indexedAt: string
 }
 
-export type SubState = {
+type SubState = {
   service: string
   cursor: number
 }
