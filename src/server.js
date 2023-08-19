@@ -6,29 +6,39 @@ const { DidResolver, MemoryCache } = require('@atproto/did-resolver');
 const { createServer } = require('../lexicon-js');
 const feedGeneration = require('./methods/feed-generation');
 const describeGenerator = require('./methods/describe-generator');
-const { createDb, migrateToLatest } = require('./db');
+// const { createDb, migrateToLatest } = require('./db');
 const FirehoseSubscription = require('./subscription');
 const wellKnown = require('./well-known');
 
 class FeedGenerator {
+     // * @param {Database} db
+  // sqliteLocation: string
+
   /**
    * @param {express.Application} app
-   * @param {Database} db
    * @param {FirehoseSubscription} firehose
-   * @param {Config} cfg
+   * @param {{
+   * port: number
+   * listenhost: string
+   * hostname: string
+   * subscriptionEndpoint: string
+   * serviceDid: string
+   * publisherDid: string
+   * subscriptionReconnectDelay: number
+   * }} cfg
    */
-  constructor(app, db, firehose, cfg) {
+  constructor(app, /*db, */ firehose, cfg) {
     this.app = app
-    this.db = db
+    // this.db = db
     this.firehose = firehose
     this.cfg = cfg
   }
 
-  /** @param {Config} cfg */
+  /** @param {ConstructorParameters<typeof FeedGenerator>[2]} cfg */
   static create(cfg) {
     const app = express()
-    const db = createDb(cfg.sqliteLocation)
-    const firehose = new FirehoseSubscription(db, cfg.subscriptionEndpoint)
+    // const db = createDb(cfg.sqliteLocation)
+    const firehose = new FirehoseSubscription(/*db,*/ cfg.subscriptionEndpoint)
 
     const didCache = new MemoryCache()
     const didResolver = new DidResolver(
@@ -45,9 +55,8 @@ class FeedGenerator {
       },
     })
 
-    /** @type {AppContext} */
     const ctx = {
-      db,
+      // db,
       didResolver,
       cfg,
     }
@@ -56,11 +65,11 @@ class FeedGenerator {
     app.use(server.xrpc.router)
     app.use(wellKnown(ctx))
 
-    return new FeedGenerator(app, db, firehose, cfg)
+    return new FeedGenerator(app, /*db,*/ firehose, cfg)
   }
 
   async start() {
-    await migrateToLatest(this.db)
+    // await migrateToLatest(this.db)
     this.firehose.run(this.cfg.subscriptionReconnectDelay)
     this.server = this.app.listen(this.cfg.port, this.cfg.listenhost)
     await events.once(this.server, 'listening')

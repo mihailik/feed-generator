@@ -16,17 +16,19 @@ const { isCommit } = require('../../lexicon-js/types/com/atproto/sync/subscribeR
 
 class FirehoseSubscriptionBase {
 
+  //    * @param {Database} db
+
   /**
-   * @param {Database} db
    * @param {string} service
    */
-  constructor(db, service) {
-    this.db = db;
+  constructor(/*db,*/ service) {
+    // this.db = db;
     this.service = service;
+    /** @type {Subscription<*>} */
     this.sub = new Subscription({
       service: service,
       method: ids.ComAtprotoSyncSubscribeRepos,
-      getParams: () => this.getCursor(),
+      getParams: () => /** @type {*} */(this.getCursor()),
       validate: (value) => {
         try {
           return lexicons.assertValidXrpcMessage(
@@ -72,22 +74,29 @@ class FirehoseSubscriptionBase {
    * @param {number} cursor
    */
   async updateCursor(cursor) {
-    await this.db
-      .updateTable('sub_state')
-      .set({ cursor })
-      .where('service', '=', this.service)
-      .execute()
+    this.cursor = cursor;
+    // await this.db
+    //   .updateTable('sub_state')
+    //   .set({ cursor })
+    //   .where('service', '=', this.service)
+    //   .execute()
   }
 
   async getCursor() {
-    const res = await this.db
-      .selectFrom('sub_state')
-      .selectAll()
-      .where('service', '=', this.service)
-      .executeTakeFirst()
-    return res ? { cursor: res.cursor } : {}
+    return this.cursor;
+    // const res = await this.db
+    //   .selectFrom('sub_state')
+    //   .selectAll()
+    //   .where('service', '=', this.service)
+    //   .executeTakeFirst()
+    // return res ? { cursor: res.cursor } : {}
   }
 }
+
+/** @typedef {{ uri: string, cid: string, author: string, record: any }} CreateOp */
+/** @typedef {{ uri: string, cid?: string }} DeleteOp */
+/** @typedef {{ creates: CreateOp[], deletes: DeleteOp[] }} Operations */
+/** @typedef {{ posts: Operations, reposts: Operations, likes: Operations, follows: Operations }} OperationsByType */
 
 /**
  * @param {Commit} evt
@@ -143,6 +152,7 @@ const getOpsByType = async (evt) => {
 
 /** @type {(obj: unknown) => obj is PostRecord} */
 const isPost = (obj) => {
+
   return isType(obj, ids.AppBskyFeedPost)
 }
 

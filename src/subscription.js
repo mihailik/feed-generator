@@ -38,17 +38,19 @@ class FirehoseSubscription extends FirehoseSubscriptionBase {
       })
 
     if (postsToDelete.length > 0) {
-      await this.db
-        .deleteFrom('post')
-        .where('uri', 'in', postsToDelete)
-        .execute()
+      console.log('postsToDelete+' + postsToDelete.length);
+      // await this.db
+      //   .deleteFrom('post')
+      //   .where('uri', 'in', postsToDelete)
+      //   .execute()
     }
     if (postsToCreate.length > 0) {
-      await this.db
-        .insertInto('post')
-        .values(postsToCreate)
-        .onConflict((oc) => oc.doNothing())
-        .execute()
+      console.log('postsToCreate+' + postsToCreate.length);
+      // await this.db
+      //   .insertInto('post')
+      //   .values(postsToCreate)
+      //   .onConflict((oc) => oc.doNothing())
+      //   .execute()
     }
   }
 }

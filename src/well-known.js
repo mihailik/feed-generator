@@ -3,7 +3,12 @@
 const express = require('express');
 
 /**
- * @param {AppContext} ctx
+ * @param {{
+ *  cfg: {
+ *   serviceDid: string
+ *   hostname: string
+ *  }
+ * }} ctx
  */
 const makeRouter = (ctx) => {
   const router = express.Router()
