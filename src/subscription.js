@@ -6,6 +6,10 @@ const { isCommit } = require('../lexicon-js/types/com/atproto/sync/subscribeRepo
 const { FirehoseSubscriptionBase, getOpsByType } = require('./util/subscription');
 
 class FirehoseSubscription extends FirehoseSubscriptionBase {
+
+  /** @type {{ stamp: string, reference: string }[]} */
+  cache = [];
+
   /**
    * @param {RepoEvent} evt
    */
@@ -17,6 +21,13 @@ class FirehoseSubscription extends FirehoseSubscriptionBase {
     // Just for fun :)
     // Delete before actually using
     if (ops.posts.creates.length + ops.posts.deletes.length > 0) {
+      for (const cr of ops.posts.creates) {
+        this.cache.push({ stamp: 't' + Date.now(), reference: cr.uri });
+      }
+      while (this.cache.length > 20) {
+        this.cache.shift();
+      }
+
       // console.log(
       //   (ops.posts.creates.length ? 'creates[' + ops.posts.creates.length + '] ' : '') +
       //   (ops.posts.deletes.length ? 'deletes[' + ops.posts.deletes.length + '] ' : '') + 

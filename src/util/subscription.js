@@ -126,13 +126,13 @@ const getOpsByType = async (evt) => {
       if (!recordBytes) continue
       const record = cborToLexRecord(recordBytes)
       const create = { uri, cid: op.cid.toString(), author: evt.repo }
-      if (collection === ids.AppBskyFeedPost && isPost(record)) {
+      if (collection === ids.AppBskyFeedPost) {
         opsByType.posts.creates.push({ record, ...create })
-      } else if (collection === ids.AppBskyFeedRepost && isRepost(record)) {
+      } else if (collection === ids.AppBskyFeedRepost) {
         opsByType.reposts.creates.push({ record, ...create })
-      } else if (collection === ids.AppBskyFeedLike && isLike(record)) {
+      } else if (collection === ids.AppBskyFeedLike) {
         opsByType.likes.creates.push({ record, ...create })
-      } else if (collection === ids.AppBskyGraphFollow && isFollow(record)) {
+      } else if (collection === ids.AppBskyGraphFollow) {
         opsByType.follows.creates.push({ record, ...create })
       }
     }
@@ -151,36 +151,6 @@ const getOpsByType = async (evt) => {
   }
 
   return opsByType
-}
-
-/** @type {(obj: unknown) => obj is PostRecord} */
-const isPost = (obj) => {
-
-  return isType(obj, ids.AppBskyFeedPost)
-}
-
-/** @type {(obj: unknown): obj is RepostRecord} */
-const isRepost = (obj) => {
-  return isType(obj, ids.AppBskyFeedRepost)
-}
-
-/** @type {(obj: unknown): obj is LikeRecord} */
-const isLike = (obj) => {
-  return isType(obj, ids.AppBskyFeedLike)
-}
-
-/** @type {(obj: unknown): obj is FollowRecord} */
-const isFollow = (obj) => {
-  return isType(obj, ids.AppBskyGraphFollow)
-}
-
-const isType = (obj, nsid) => {
-  try {
-    lexicons.assertValidRecord(nsid, fixBlobRefs(obj))
-    return true
-  } catch (err) {
-    return false
-  }
 }
 
 // @TODO right now record validation fails on BlobRefs
@@ -206,8 +176,4 @@ const fixBlobRefs = (obj) => {
 module.exports = {
   FirehoseSubscriptionBase,
   getOpsByType,
-  isPost,
-  isRepost,
-  isLike,
-  isFollow
 }

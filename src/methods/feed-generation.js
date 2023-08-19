@@ -7,7 +7,7 @@ const { AtUri } = require('@atproto/uri');
 module.exports =
   /**
    * @param {import('../lexicon').Server} server
-   * @param {AppContext} ctx
+   * @param {{cfg: { publisherDid: string }, cache: { stamp: string, reference: string }[] }} ctx
    */
   function (server, ctx) {
     server.app.bsky.feed.getFeedSkeleton(async ({ params, req }) => {

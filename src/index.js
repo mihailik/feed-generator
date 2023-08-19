@@ -2,9 +2,11 @@
 
 // needed to run on earlier node version
 // (because atproto relies on that method call in one place)
-Array.prototype.at = function (index) {
-  return this.slice(index)[0];
-};
+if (!Array.prototype.at) {
+  Array.prototype.at = function (index) {
+    return index >= 0 ? this[index] : this[this.length + index];
+  };
+}
 
 const dotenv = require('dotenv')
 const FeedGenerator = require('./server');
@@ -22,12 +24,13 @@ const run = async () => {
       maybeStr(process.env.FEEDGEN_SUBSCRIPTION_ENDPOINT) ??
       'wss://bsky.social',
     publisherDid:
-      maybeStr(process.env.FEEDGEN_PUBLISHER_DID) ?? 'did:example:alice',
+      maybeStr(process.env.FEEDGEN_PUBLISHER_DID) ?? 'did:example:oyin.bo',
     subscriptionReconnectDelay:
       maybeInt(process.env.FEEDGEN_SUBSCRIPTION_RECONNECT_DELAY) ?? 3000,
     hostname,
     serviceDid,
-  })
+  },
+  [])
   await server.start()
   console.log(
     `🤖 running feed generator at http://${server.cfg.listenhost}:${server.cfg.port}`,

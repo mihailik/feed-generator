@@ -27,18 +27,22 @@ class FeedGenerator {
    * subscriptionReconnectDelay: number
    * }} cfg
    */
-  constructor(app, /*db, */ firehose, cfg) {
+  constructor(app, /*db, */ firehose, cfg, cache) {
     this.app = app
     // this.db = db
     this.firehose = firehose
     this.cfg = cfg
   }
 
-  /** @param {ConstructorParameters<typeof FeedGenerator>[2]} cfg */
-  static create(cfg) {
+  /**
+   * @param {ConstructorParameters<typeof FeedGenerator>[2]} cfg
+   * @param {{ stamp: string, reference: string }[]} cache
+   */
+  static create(cfg, cache) {
     const app = express()
     // const db = createDb(cfg.sqliteLocation)
-    const firehose = new FirehoseSubscription(/*db,*/ cfg.subscriptionEndpoint)
+    const firehose = new FirehoseSubscription(/*db,*/ cfg.subscriptionEndpoint);
+    firehose.cache = cache;
 
     const didCache = new MemoryCache()
     const didResolver = new DidResolver(
@@ -59,13 +63,14 @@ class FeedGenerator {
       // db,
       didResolver,
       cfg,
+      cache
     }
     feedGeneration(server, ctx)
     describeGenerator(server, ctx)
     app.use(server.xrpc.router)
     app.use(wellKnown(ctx))
 
-    return new FeedGenerator(app, /*db,*/ firehose, cfg)
+    return new FeedGenerator(app, /*db,*/ firehose, cfg, cache)
   }
 
   async start() {
