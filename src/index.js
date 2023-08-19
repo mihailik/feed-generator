@@ -1,5 +1,7 @@
 // @ts-check
 
+// needed to run on earlier node version
+// (because atproto relies on that method call in one place)
 Array.prototype.at = function (index) {
   return this.slice(index)[0];
 };

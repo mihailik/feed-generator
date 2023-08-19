@@ -18,6 +18,9 @@ class FirehoseSubscriptionBase {
 
   //    * @param {Database} db
 
+  /** @type {Record<string, any>} */
+  cursors = {};
+
   /**
    * @param {string} service
    */
@@ -74,7 +77,7 @@ class FirehoseSubscriptionBase {
    * @param {number} cursor
    */
   async updateCursor(cursor) {
-    this.cursor = cursor;
+    this.cursors[this.service] = cursor;
     // await this.db
     //   .updateTable('sub_state')
     //   .set({ cursor })
@@ -83,7 +86,7 @@ class FirehoseSubscriptionBase {
   }
 
   async getCursor() {
-    return this.cursor;
+    return this.cursors[this.service];
     // const res = await this.db
     //   .selectFrom('sub_state')
     //   .selectAll()
