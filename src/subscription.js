@@ -16,41 +16,23 @@ class FirehoseSubscription extends FirehoseSubscriptionBase {
     // This logs the text of every post off the firehose.
     // Just for fun :)
     // Delete before actually using
-    for (const post of ops.posts.creates) {
-      console.log(post.record.text)
-    }
-
-    const postsToDelete = ops.posts.deletes.map((del) => del.uri)
-    const postsToCreate = ops.posts.creates
-      .filter((create) => {
-        // only alf-related posts
-        return create.record.text.toLowerCase().includes('alf')
-      })
-      .map((create) => {
-        // map alf-related posts to a db row
-        return {
-          uri: create.uri,
-          cid: create.cid,
-          replyParent: create.record?.reply?.parent.uri ?? null,
-          replyRoot: create.record?.reply?.root.uri ?? null,
-          indexedAt: new Date().toISOString(),
-        }
-      })
-
-    if (postsToDelete.length > 0) {
-      console.log('postsToDelete+' + postsToDelete.length);
-      // await this.db
-      //   .deleteFrom('post')
-      //   .where('uri', 'in', postsToDelete)
-      //   .execute()
-    }
-    if (postsToCreate.length > 0) {
-      console.log('postsToCreate+' + postsToCreate.length);
-      // await this.db
-      //   .insertInto('post')
-      //   .values(postsToCreate)
-      //   .onConflict((oc) => oc.doNothing())
-      //   .execute()
+    if (ops.posts.creates.length + ops.posts.deletes.length > 0) {
+      // console.log(
+      //   (ops.posts.creates.length ? 'creates[' + ops.posts.creates.length + '] ' : '') +
+      //   (ops.posts.deletes.length ? 'deletes[' + ops.posts.deletes.length + '] ' : '') + 
+      //   ':'
+      // );
+      for (const post of ops.posts.creates) {
+        let shorte = (post.record.text || '').replace(/\s+/g, ' ').trim();
+        if (shorte.length > 50) shorte = shorte.slice(0, 48).trim() + '...';
+        console.log(
+          '   [' + post.author + '] ',
+          shorte,
+          post.record.embed ? ' [' + (post.record.embed['$type'] || '').replace(/^app\.bsky\.embed/, '') + ']' : '');
+      }
+      for (const post of ops.posts.deletes) {
+        console.log('   [del] ', post.uri/*.text*/);
+      }
     }
   }
 }
