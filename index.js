@@ -1,8 +1,74 @@
 // @ts-check
 
+/** @typedef {{
+ * $type?: string;
+ * seq?: number; // 176929363
+ * prev?: CID;
+ * repo?: string;
+ * time?: string;
+ * commit?: CID;
+ * blobs?: any[];
+ * rebase?: boolean;
+ * tooBig?: boolean;
+ * ops?: OpEntry[]; }} FirehoseRecord */
+
+  /** @typedef {{
+   *  toString(): string;
+   *  code: number;
+   *  version: number;
+   *  bytes: Uint8Array;
+   * }} CID */
+
+  /** @typedef {{
+   *  $type?: string;
+   *  action?: string;
+   *  cid?: CID;
+   *  createdAt?: string;
+   *  path?: string;
+   *  text?: string;
+   *  reply?: {
+   *    cid: string;
+   *    uri: string;
+   *  };
+   *  embed?: {
+   *    $type: string; // app.bsky.embed.* - images, external, record, recordWithMedia
+   *    images?: {
+   *      image: BlobRef;
+   *      alt: string;
+   *    }[];
+   *    media?: {
+   *      $type: string;
+   *      images: BlobRef[];
+   *    };
+   *    record: {
+   *      cid: string;
+   *      uri: string;
+   *    };
+   *    external?: {
+   *      uri: string;
+   *      thumb: BlobRef;
+   *      title: string;
+   *      description: string;
+   *      facets: any[];
+   *    };
+   *  };
+   * }} OpEntry */
+
+  /** @typedef {{
+   *  ref: CID;
+   *  mimeType: string; // image/jpeg
+   *  size: number;
+   *  original: {
+   *    $type: string; // blob
+   *    ref: CID; // seems to be the same
+   *    mimeType: string;
+   *    size: number;
+   *  }
+   * }} BlobRef */
+
 async function *getFirehose() {
   const { Subscription } = require('@atproto/xrpc-server');
-  const { Lexicons } = require('@atproto/lexicon');
+  // const { Lexicons } = require('@atproto/lexicon');
   const { cborToLexRecord, readCar } = require('@atproto/repo');
 
   const ids = {
@@ -28,11 +94,12 @@ async function *getFirehose() {
 
     const { blocks, ops } = evt;
 
-    if (!blocks || !ops) yield evt;
+    if (!blocks || !ops) {
+      // yield evt;
+      continue;
+    }
 
     const car = await readCar(blocks);
-
-    const enriched = { ...evt, car };
 
     const mappedOps = ops.map(op => {
       if (!op.cid) return op;
@@ -43,21 +110,21 @@ async function *getFirehose() {
     });
     
 
-    yield { ...evt, blocks: undefined, ops: mappedOps };
+    yield /** @type {FirehoseRecord} */({ ...evt, blocks: undefined, ops: mappedOps });
   }
 }
 
 async function run() {
-  let number = 0;
+  let types = [];
   for await (const evt of getFirehose()) {
     if (!evt.ops) continue;
     for (const op of evt.ops) {
-      if (op.text) {
-        console.log(number, '   ', { ...evt, ops: undefined, ...op });
-        number++;
-        if (number >= 10) break;
+      if (op.text && op.embed?.$type && types.indexOf(op.embed.$type) < 0) {
+        types.push(op.embed.$type);
+        console.log(types.length, '   ', { text: op.text, ...op.embed });
       }
     }
+    if (types.length >= 10) break;
   }
 }
 
