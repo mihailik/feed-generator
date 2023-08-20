@@ -114,19 +114,107 @@ async function *getFirehose() {
   }
 }
 
-async function run() {
-  let list = [];
+async function* serveRequests(options) {
+  const http = require('http');
+  const URL = require('url');
+
+  /** @type {{ req: import('http').IncomingMessage & { parsedUrl?: import('url').UrlWithParsedQuery, body?: any }, res: import('http').ServerResponse }[]} */
+  const requests = [];
+  let waitingPromiseResolve;
+  const server = http.createServer(async function (req, res) {
+    const parsedUrl = URL.parse('http://' + req.headers.host + req.url, true);
+    /** @type {*} */(req).parsedUrl = parsedUrl;
+    if (req.method === 'POST') {
+      let body = await new Promise(resolve => {
+        const bufs = [];
+        req.on('data', (chunk) => {
+          bufs.push(chunk);
+        });
+        req.on('end', () => {
+          const whole = Buffer.concat(bufs);
+          resolve(whole);
+        });
+      });
+
+      if (body.length) {
+        let anyWeirdCharacters = false;
+        for (let i = 0; i < body.length; i++) {
+          if (body[i] < 32 || body[i] === 0xFF) {
+            anyWeirdCharacters = true;
+            break;
+          }
+        }
+
+        if (!anyWeirdCharacters) {
+          try {
+            const str = body.toString('utf8');
+
+            try {
+              const json = JSON.parse(str);
+              body = json;
+            } catch (nonJsonError) {
+              body = str;
+              // log?
+            }
+          } catch (nonUtf8Error) {
+            // log?
+          }
+        }
+
+        /** @type {*} */(req).body = body;
+      }
+    }
+
+    requests.push({ req, res });
+
+    if (waitingPromiseResolve) waitingPromiseResolve();
+  });
+
+  server.listen(options || { port: 3000, host: '0.0.0.0' });
+
+  try {
+
+    while (true) {
+      const next = requests.shift();
+      if (next) {
+        yield next;
+        continue;
+      }
+
+      await new Promise(resolve => {
+        waitingPromiseResolve = resolve;
+      });
+    }
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+}
+
+async function runServer(list) {
+  console.log('runServer...');
+  for await (const { req, res } of serveRequests()) {
+    console.log(req.method + ' ', req.parsedUrl, req.body, list);
+    res.end('[\n' + list.map(({ evt, op }) => JSON.stringify({ post: `at://${evt.repo}/${op.path}` })).join(',\n') + '\n]');
+  }
+}
+
+async function runFirehose(list) {
   for await (const evt of getFirehose()) {
     if (!evt.ops) continue;
     for (const op of evt.ops) {
-      if (op.text && op.reply) {
-        list.push(op);
-        console.log(list.length, '   ', op, evt.commit);
-        console.dir(evt.commit);
+      if (op.text) {
+        list.push({ evt, op });
       }
     }
-    if (list.length >= 10) break;
+
+    while (list.length > 20) list.shift();
   }
+}
+
+function run() {
+  const list = [];
+  runFirehose(list);
+  runServer(list);
 }
 
 run();

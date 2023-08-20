@@ -21,15 +21,15 @@ const run = async () => {
   // A short name for the record that will show in urls
   // Lowercase with no spaces.
   // Ex: whats-hot
-  const recordName = 'tak'
+  const recordName = 'rnd'
 
   // A display name for your feed
   // Ex: What's Hot
-  const displayName = 'TAK! 🧲'
+  const displayName = 'RND 🤖'
 
   // (Optional) A description of your feed
   // Ex: Top trending content from the whole network
-  const description = 'Ю'
+  const description = 'Random firehose slice'
 
   // (Optional) The path to an image to be used as your feed's avatar
   // Ex: ~/path/to/avatar.jpeg
