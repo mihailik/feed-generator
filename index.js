@@ -27,8 +27,8 @@
    *  path?: string;
    *  text?: string;
    *  reply?: {
-   *    cid: string;
-   *    uri: string;
+   *    root: { cid: string; uri: string };
+   *    parent: { cid: string; uri: string };
    *  };
    *  embed?: {
    *    $type: string; // app.bsky.embed.* - images, external, record, recordWithMedia
@@ -115,16 +115,17 @@ async function *getFirehose() {
 }
 
 async function run() {
-  let types = [];
+  let list = [];
   for await (const evt of getFirehose()) {
     if (!evt.ops) continue;
     for (const op of evt.ops) {
-      if (op.text && op.embed?.$type && types.indexOf(op.embed.$type) < 0) {
-        types.push(op.embed.$type);
-        console.log(types.length, '   ', { text: op.text, ...op.embed });
+      if (op.text && op.reply) {
+        list.push(op);
+        console.log(list.length, '   ', op, evt.commit);
+        console.dir(evt.commit);
       }
     }
-    if (types.length >= 10) break;
+    if (list.length >= 10) break;
   }
 }
 
